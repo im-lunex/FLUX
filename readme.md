@@ -309,9 +309,8 @@ copies or substantial portions of the Software.
 
 ## 📞 Support
 
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/yourusername/rust-task-manager/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/yourusername/rust-task-manager/discussions)
-- 📧 **Contact**: your.email@example.com
+- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/im-lunex/rust-task-manager/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/im-lunex/rust-task-manager/discussions)
 
 ---
 
