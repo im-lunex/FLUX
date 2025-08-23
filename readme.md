@@ -1,4 +1,4 @@
-# 📋 Rust Task Manager
+# FLUX
 
 <div align="center">
 
