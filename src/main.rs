@@ -2,40 +2,11 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::{self, Write};
 
-#[derive(Debug, Clone)]
-struct UserAuth {
-    username: String,
-    password: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct Task {
-    id: String,
-    content: String,
-    completed: bool,
-    created_at: String,
-}
-
-impl Task {
-    fn new(content: String) -> Self {
-        Self {
-            id: chrono::Utc::now().timestamp().to_string(),
-            content,
-            completed: false,
-            created_at: chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string(),
-        }
-    }
-
-    fn to_file_line(&self) -> String {
-        format!(
-            "task_{}: {} | status: {} | created: {}",
-            self.id,
-            self.content,
-            if self.completed { "done" } else { "pending" },
-            self.created_at
-        )
-    }
-}
+#[cfg(test)] 
+use todo_cli::auth::{ create_user };
+use todo_cli::auth:: { handle_user_creation, handle_login };
+#[cfg(test)] 
+use todo_cli::task::{ get_all_tasks, save_tasks, Task, parse_task_line_advanced, parse_task_line_simple, export_to_json};
 
 fn main() {
     println!("\n=== FLUX ===");
@@ -64,6 +35,10 @@ fn main() {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
 
 fn handle_user_creation() {
     println!("\n--- Create New User ---");
