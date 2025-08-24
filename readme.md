@@ -67,10 +67,10 @@ cargo run
 
 ```bash
 # Install directly from GitHub
-cargo install --git https://github.com/yourusername/rust-task-manager.git
+cargo install --git https://github.com/im-lunex/FLUX
 
 # Run the application
-rust-task-manager
+flux
 ```
 
 ## 📖 Usage
