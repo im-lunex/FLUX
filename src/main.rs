@@ -38,7 +38,7 @@ impl Task {
 }
 
 fn main() {
-    println!("\n=== TASK MANAGER ===");
+    println!("\n=== FLUX ===");
 
     loop {
         println!("\nMain Menu:");
