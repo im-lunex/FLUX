@@ -1,5 +1,6 @@
 use std::fs;
 use std::io::{self, Write};
+use serde:: { Deserialize, Serialize };
 
 #[derive(Debug, Clone)]
 struct UserAuth {
@@ -7,7 +8,7 @@ struct UserAuth {
     password: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct Task {
     id: String,
     content: String,
@@ -144,7 +145,8 @@ fn task_management_menu(username: String) {
         println!("5. Mark task as pending");
         println!("6. Search tasks");
         println!("7. Task statistics");
-        println!("8. Logout");
+        println!("8. Export to JSON file");
+        println!("9. Logout");
         print!("Enter command: ");
         io::stdout().flush().unwrap();
 
@@ -161,7 +163,8 @@ fn task_management_menu(username: String) {
             "5" => mark_task_pending(&username),
             "6" => search_tasks(&username),
             "7" => show_task_statistics(&username),
-            "8" => {
+            "8" => export_to_json(&username),
+            "9" => {
                 println!("Logged out successfully!");
                 break;
             }
@@ -383,7 +386,7 @@ fn mark_task_status(username: &str, completed: bool, status_name: &str) {
     }
 
     println!("Tasks available to mark as {}:", status_name);
-    for (display_index, (original_index, task)) in relevant_tasks.iter().enumerate() {
+    for (display_index, (_, task)) in relevant_tasks.iter().enumerate() {
         let status_icon = if task.completed { "✅" } else { "⏳" };
         println!(
             "{}. {} {} (ID: {})",
@@ -542,6 +545,14 @@ fn create_user(username: String, password: String) -> Result<String, std::io::Er
     Ok(format!("User '{}' created successfully!", username.trim()))
 }
 
+fn export_to_json(username: &str) {
+    let tasks = get_all_tasks(username);
+    let json_str = serde_json::to_string(&tasks).unwrap();
+    match fs::write("tasks.json", json_str) {
+        Ok(_) => println!("tasks.json created successfully!"),
+        Err(_) => eprintln!("tasks.json could not be written")
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -569,6 +580,21 @@ mod tests {
         assert_eq!(task.content, "Test task");
         assert!(!task.completed);
         assert!(!task.id.is_empty());
+    }
+
+    #[test]
+    fn test_task_export() {
+        let test_user = "test_user";
+        create_user(test_user.to_string(), String::from("123456")).unwrap();
+        let new_task = Task::new("Test task".to_string());
+        let mut tasks = get_all_tasks(test_user);
+        tasks.push(new_task);
+        save_tasks(test_user, &tasks).unwrap();
+        export_to_json(test_user);
+        let content = std::fs::read_to_string("tasks.json").unwrap();
+        let data: Vec<Task> = serde_json::from_str(&content).unwrap();
+        assert_eq!(data.len(), 1);
+        assert_eq!(data[0].content, "Test task");
     }
 }
 
