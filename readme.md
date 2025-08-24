@@ -226,19 +226,15 @@ git push origin feature/my-feature
 - [ ] Export tasks to JSON/CSV
 - [ ] Task templates
 
-### v3.0 - Advanced Functionality
-- [ ] Web interface option
-- [ ] Team collaboration features
-- [ ] Cloud synchronization
-- [ ] Mobile app companion
-- [ ] Advanced analytics dashboard
-
 ### v4.0 - Enterprise Features
 - [ ] Database integration
 - [ ] API endpoints
 - [ ] Plugin system
 - [ ] Advanced reporting
 - [ ] Integration with popular tools
+- [ ] Team collaboration features
+- [ ] Cloud synchronization
+- [ ] Advanced analytics dashboard
 
 ## 📊 Performance
 
