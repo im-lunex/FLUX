@@ -54,10 +54,7 @@
 git clone https://github.com/im-lunex/FLUX.git
 
 # Navigate to the project directory
-cd FLUX 
-
-# Add required dependency to Cargo.toml
-echo 'chrono = "0.4"' >> Cargo.toml
+cd FLUX
 
 # Build and run
 cargo run
