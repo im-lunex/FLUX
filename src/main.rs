@@ -261,28 +261,52 @@ fn view_task(username: &str) {
     println!("Total tasks: {}", tasks.len());
 }
 
+fn validate_task_content(input: &str) -> Result<(String, Option<String>), String> {
+    let mut trimmed = input.trim().to_string();
+
+    if trimmed.is_empty() {
+        return Err("Task description cannot be empty or whitespace.".into());
+    }
+
+    if trimmed.len() > 200 {
+        trimmed.truncate(200);
+        return Ok((
+            trimmed,
+            Some("Task description too long. Truncated to 200 characters.".into()),
+        ));
+    }
+
+    Ok((trimmed, None))
+}
+
 fn add_task(username: &str) {
     println!("\n--- Add Task ---");
     print!("Task description: ");
     io::stdout().flush().unwrap();
+
     let mut task_content = String::new();
     io::stdin()
         .read_line(&mut task_content)
         .expect("Failed to read line");
-    let task_content = task_content.trim();
 
-    if task_content.is_empty() {
-        println!("[ERR] Task description cannot be empty.");
-        return;
-    }
+    match validate_task_content(&task_content) {
+        Ok((valid_content, warning)) => {
+            if let Some(msg) = warning {
+                println!("[WARN] {}", msg);
+            }
 
-    let new_task = Task::new(task_content.to_string());
-    let mut tasks = get_all_tasks(username);
-    tasks.push(new_task);
+            let new_task = Task::new(valid_content);
+            let mut tasks = get_all_tasks(username);
+            tasks.push(new_task);
 
-    match save_tasks(username, &tasks) {
-        Ok(()) => println!("[OK] Task added."),
-        Err(e) => eprintln!("[ERR] Could not save task: {}", e),
+            match save_tasks(username, &tasks) {
+                Ok(()) => println!("[OK] Task added."),
+                Err(e) => eprintln!("[ERR] Could not save task: {}", e),
+            }
+        }
+        Err(err_msg) => {
+            println!("[ERR] {}", err_msg);
+        }
     }
 }
 
@@ -577,5 +601,48 @@ mod tests {
         assert!(json_content.contains("T2"));
 
         cleanup_user_file(username);
+    }
+
+    #[test]
+    fn test_validate_task_empty() {
+        let result = validate_task_content("");
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            "Task description cannot be empty or whitespace."
+        );
+    }
+
+    #[test]
+    fn test_validate_task_whitespace() {
+        let result = validate_task_content("    ");
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err(),
+            "Task description cannot be empty or whitespace."
+        );
+    }
+
+    #[test]
+    fn test_validate_task_trimmed() {
+        let result = validate_task_content("   Buy milk   ");
+        assert!(result.is_ok());
+        let (content, warning) = result.unwrap();
+        assert_eq!(content, "Buy milk");
+        assert!(warning.is_none());
+    }
+
+    #[test]
+    fn test_validate_task_too_long() {
+        let long_input = "x".repeat(250);
+        let result = validate_task_content(&long_input);
+        assert!(result.is_ok());
+        let (content, warning) = result.unwrap();
+        assert_eq!(content.len(), 200);
+        assert!(warning.is_some());
+        assert_eq!(
+            warning.unwrap(),
+            "Task description too long. Truncated to 200 characters."
+        );
     }
 }
