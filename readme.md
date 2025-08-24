@@ -51,10 +51,10 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/rust-task-manager.git
+git clone https://github.com/im-lunex/FLUX.git
 
 # Navigate to the project directory
-cd rust-task-manager
+cd FLUX 
 
 # Add required dependency to Cargo.toml
 echo 'chrono = "0.4"' >> Cargo.toml
