@@ -68,7 +68,7 @@ fn main() {
 fn handle_user_creation() {
     println!("\n--- Create New User ---");
 
-    print!("Username: ");
+    print!("Enter your username: ");
     io::stdout().flush().unwrap();
     let mut username = String::new();
     io::stdin()
@@ -76,7 +76,7 @@ fn handle_user_creation() {
         .expect("Failed to read line");
     let username = username.trim().to_string();
 
-    print!("Password: ");
+    print!("Enter your password: ");
     io::stdout().flush().unwrap();
     let mut password = String::new();
     io::stdin()
