@@ -12,19 +12,17 @@ pub fn handle_user_creation() {
     println!("\n--- Create New User ---");
 
     print!("Enter your username: ");
-    io::stdout().flush().unwrap();
+    try_flush_stdout();
     let mut username = String::new();
-    io::stdin()
-        .read_line(&mut username)
-        .expect("Failed to read line");
+    try_read_line(&mut username);
+
     let username = username.trim().to_string();
 
     print!("Enter your password: ");
-    io::stdout().flush().unwrap();
+    try_flush_stdout();
     let mut password = String::new();
-    io::stdin()
-        .read_line(&mut password)
-        .expect("Failed to read line");
+    try_read_line(&mut password);
+
     let password = password.trim().to_string();
 
     match create_user(username, password) {
@@ -37,19 +35,16 @@ pub fn handle_login() {
     println!("\n--- Login ---");
 
     print!("Username: ");
-    io::stdout().flush().unwrap();
+    try_flush_stdout();
     let mut username = String::new();
-    io::stdin()
-        .read_line(&mut username)
-        .expect("Failed to read line");
+    try_read_line(&mut username);
+
     let username = username.trim().to_string();
 
     print!("Password: ");
-    io::stdout().flush().unwrap();
+    try_flush_stdout();
     let mut password = String::new();
-    io::stdin()
-        .read_line(&mut password)
-        .expect("Failed to read line");
+    try_read_line(&mut password);
     let password = password.trim().to_string();
 
     if authenticate_user(&username, &password) {
@@ -74,17 +69,20 @@ pub fn task_management_menu(username: String) {
         println!("[8] Export to JSON");
         println!("[9] Logout");
         print!("-> Enter choice [1-9]: ");
-        io::stdout().flush().unwrap();
+        if let Err(e) = io::stdout().flush() {
+            eprintln!("Warning: failed to flush stdout: {}", e);
+        }
 
         let mut command = String::new();
-        io::stdin()
-            .read_line(&mut command)
-            .expect("Failed to read line");
+        if let Err(e) = io::stdin().read_line(&mut command) {
+            eprintln!("Failed to read line: {}, Please try again!", e);
+            continue;
+        }
 
         match command.trim() {
             "1" => view_task(&username),
             "2" => add_task(&username),
-            "3" => delete_task(&username),
+              "3" => delete_task(&username),
             "4" => mark_task_done(&username),
             "5" => mark_task_pending(&username),
             "6" => search_tasks(&username),
@@ -128,12 +126,10 @@ pub fn view_task(username: &str) {
 pub fn add_task(username: &str) {
     println!("\n--- Add Task ---");
     print!("Task description: ");
-    io::stdout().flush().unwrap();
+    try_flush_stdout();
 
     let mut task_content = String::new();
-    io::stdin()
-        .read_line(&mut task_content)
-        .expect("Failed to read line");
+    try_read_line(&mut task_content);
 
     match validate_task_content(&task_content) {
         Ok((valid_content, warning)) => {
@@ -171,11 +167,9 @@ pub fn delete_task(username: &str) {
     }
 
     print!("Enter task number to delete (1-{}): ", tasks.len());
-    io::stdout().flush().unwrap();
+    try_flush_stdout();
     let mut input = String::new();
-    io::stdin()
-        .read_line(&mut input)
-        .expect("Failed to read line");
+    try_read_line(&mut input);
 
     match input.trim().parse::<usize>() {
         Ok(task_num) if task_num > 0 && task_num <= tasks.len() => {
@@ -223,11 +217,10 @@ fn mark_task_status(username: &str, completed: bool, status_name: &str) {
     }
 
     print!("Enter task number: ");
-    io::stdout().flush().unwrap();
+    try_flush_stdout();
     let mut input = String::new();
-    io::stdin()
-        .read_line(&mut input)
-        .expect("Failed to read line");
+    try_read_line(&mut input);
+
 
     match input.trim().parse::<usize>() {
         Ok(choice) if choice > 0 && choice <= relevant_tasks.len() => {
@@ -245,11 +238,9 @@ fn mark_task_status(username: &str, completed: bool, status_name: &str) {
 pub fn search_tasks(username: &str) {
     println!("\n--- Search Tasks ---");
     print!("Enter search term: ");
-    io::stdout().flush().unwrap();
+    try_flush_stdout();
     let mut search_term = String::new();
-    io::stdin()
-        .read_line(&mut search_term)
-        .expect("Failed to read line");
+    try_read_line(&mut search_term);
     let search_term = search_term.trim().to_lowercase();
 
     if search_term.is_empty() {
@@ -276,7 +267,14 @@ pub fn search_tasks(username: &str) {
 
 pub fn export_to_json(username: &str) {
     let tasks = get_all_tasks(username);
-    let json_str = serde_json::to_string_pretty(&tasks).unwrap();
+    let (json_str, is_success) = match serde_json::to_string_pretty(&tasks) {
+        Ok(json_str) => (json_str, true),
+        Err(e) => (e.to_string(), false),
+    };
+    if !is_success {
+        eprintln!("Serde Json failed: {}", json_str);
+        return;
+    }
     let parsed_filename = format!("{}_tasks.json", username.trim());
 
     match fs::write(parsed_filename.clone(), json_str) {
@@ -284,3 +282,16 @@ pub fn export_to_json(username: &str) {
         Err(_) => eprintln!("[ERR] Could not write JSON file."),
     }
 }
+
+fn try_flush_stdout() {
+    if let Err(e) = io::stdout().flush() {
+        eprintln!("Warning: failed to flush stdout: {}", e);
+    }
+}
+fn try_read_line(buf: &mut String) {
+    if let Err(e) = io::stdin().read_line(buf) {
+        eprintln!("Error: failed to read line: {}", e);
+    }
+}
+
+
