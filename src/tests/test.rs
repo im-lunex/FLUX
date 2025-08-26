@@ -8,14 +8,19 @@ fn cleanup_user_file(username: &str) {
     let _ = fs::remove_file(json_file);
 }
 
+fn setup_user(username: &str, password: &str, initial_tasks: Vec<Task>) {
+    cleanup_user_file(username);
+    create_user(username.to_string(), password.to_string()).unwrap();
+    if !initial_tasks.is_empty() {
+        save_tasks(username, &initial_tasks).unwrap();
+    }
+}
+
 #[test]
 fn test_user_creation_and_authentication() {
     let username = "testuser";
     let password = "pass123";
-    cleanup_user_file(username);
-
-    let res = create_user(username.to_string(), password.to_string());
-    assert!(res.is_ok(), "User creation failed: {:?}", res);
+    setup_user(username, password, vec![]);
 
     assert!(authenticate_user(username, password), "Auth should pass");
     assert!(
@@ -30,8 +35,7 @@ fn test_user_creation_and_authentication() {
 fn test_add_and_view_task() {
     let username = "taskuser";
     let password = "pass123";
-    cleanup_user_file(username);
-    create_user(username.to_string(), password.to_string()).unwrap();
+    setup_user(username, password, vec![]);
 
     let new_task = Task::new("Do homework".into());
     let mut tasks = get_all_tasks(username);
@@ -49,22 +53,19 @@ fn test_add_and_view_task() {
 fn test_mark_done_and_pending() {
     let username = "markuser";
     let password = "pass123";
-    cleanup_user_file(username);
-    create_user(username.to_string(), password.to_string()).unwrap();
+    setup_user(username, password, vec![Task::new("Test task".into())]);
 
-    let mut tasks = vec![Task::new("Test task".into())];
-    save_tasks(username, &tasks).unwrap();
-
+    // Mark done
+    let mut tasks = get_all_tasks(username);
     tasks[0].completed = true;
     save_tasks(username, &tasks).unwrap();
-    let loaded = get_all_tasks(username);
-    assert!(loaded[0].completed);
+    assert!(get_all_tasks(username)[0].completed);
 
-    let mut updated = loaded;
-    updated[0].completed = false;
-    save_tasks(username, &updated).unwrap();
-    let reloaded = get_all_tasks(username);
-    assert!(!reloaded[0].completed);
+    // Mark pending
+    let mut tasks = get_all_tasks(username);
+    tasks[0].completed = false;
+    save_tasks(username, &tasks).unwrap();
+    assert!(!get_all_tasks(username)[0].completed);
 
     cleanup_user_file(username);
 }
@@ -73,12 +74,9 @@ fn test_mark_done_and_pending() {
 fn test_export_to_json() {
     let username = "jsonuser";
     let password = "pass123";
-    cleanup_user_file(username);
-    create_user(username.to_string(), password.to_string()).unwrap();
-
     let mut tasks = vec![Task::new("T1".into()), Task::new("T2".into())];
     tasks[0].completed = true;
-    save_tasks(username, &tasks).unwrap();
+    setup_user(username, password, tasks);
 
     export_to_json(username);
     let filename = format!("{}_tasks.json", username);
@@ -140,4 +138,22 @@ fn test_validate_task_normal_length() {
     let (content, warning) = result.unwrap();
     assert_eq!(content, "Read Rust book");
     assert!(warning.is_none());
+}
+
+#[test]
+fn test_edit_task() {
+    let username = "taskuser_edit";
+    let password = "pass123";
+    setup_user(username, password, vec![Task::new("Old Content".into())]);
+
+    let mut tasks = get_all_tasks(username);
+    assert_eq!(tasks[0].content, "Old Content");
+
+    edit_task_content(&mut tasks, 0, "Updated Content").unwrap();
+    save_tasks(username, &tasks).unwrap();
+
+    let loaded_tasks = get_all_tasks(username);
+    assert_eq!(loaded_tasks[0].content, "Updated Content");
+
+    cleanup_user_file(username);
 }
