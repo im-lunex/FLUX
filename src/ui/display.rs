@@ -1,6 +1,8 @@
 use std::fs;
 use std::io::{self, Write};
 
+use inquire::Text;
+
 use crate::auth::{authenticate_user, create_user};
 use crate::tasks::statistics::show_task_statistics;
 use crate::tasks::storage::{get_all_tasks, save_tasks};
@@ -62,12 +64,13 @@ pub fn task_management_menu(username: String) {
         println!("[1] View tasks");
         println!("[2] Add task");
         println!("[3] Delete task");
-        println!("[4] Mark task as done");
-        println!("[5] Mark task as pending");
-        println!("[6] Search tasks");
-        println!("[7] Task statistics");
-        println!("[8] Export to JSON");
-        println!("[9] Logout");
+        println!("[4] Edit task");
+        println!("[5] Mark task as done");
+        println!("[6] Mark task as pending");
+        println!("[7] Search tasks");
+        println!("[8] Task statistics");
+        println!("[9] Export to JSON");
+        println!("[0] Logout");
         print!("-> Enter choice [1-9]: ");
         if let Err(e) = io::stdout().flush() {
             eprintln!("Warning: failed to flush stdout: {}", e);
@@ -82,13 +85,14 @@ pub fn task_management_menu(username: String) {
         match command.trim() {
             "1" => view_task(&username),
             "2" => add_task(&username),
-              "3" => delete_task(&username),
-            "4" => mark_task_done(&username),
-            "5" => mark_task_pending(&username),
-            "6" => search_tasks(&username),
-            "7" => show_task_statistics(&username),
-            "8" => export_to_json(&username),
-            "9" => {
+            "3" => delete_task(&username),
+            "4" => edit_task(&username),
+            "5" => mark_task_done(&username),
+            "6" => mark_task_pending(&username),
+            "7" => search_tasks(&username),
+            "8" => show_task_statistics(&username),
+            "9" => export_to_json(&username),
+            "0" => {
                 println!("Logged out.");
                 break;
             }
@@ -98,6 +102,62 @@ pub fn task_management_menu(username: String) {
 }
 
 // === Task Operations ===
+pub fn edit_task(username: &str) {
+    println!("\n--- Edit Task ---");
+    let mut tasks = get_all_tasks(username);
+
+    if tasks.is_empty() {
+        println!("(no tasks to edit)");
+        return;
+    }
+
+    for (index, task) in tasks.iter().enumerate() {
+        let status_icon = if task.completed { "[✔]" } else { "[ ]" };
+        println!("{}. {} {}", index + 1, status_icon, task.content);
+    }
+
+    print!("Enter task number to edit (1-{}): ", tasks.len());
+    io::stdout().flush().unwrap();
+
+    let mut input = String::new();
+    if io::stdin().read_line(&mut input).is_err() {
+        println!("[ERR] Failed to read input.");
+        return;
+    }
+
+    let task_num: usize = match input.trim().parse() {
+        Ok(num) if num > 0 && num <= tasks.len() => num,
+        _ => {
+            println!("[ERR] Invalid task number.");
+            return;
+        }
+    };
+
+    let current_task = &tasks[task_num - 1];
+
+    let edit_content = Text::new("Edit task:")
+        .with_initial_value(&current_task.content)
+        .prompt();
+
+    match edit_content {
+        Ok(new_content) => match validate_task_content(&new_content) {
+            Ok((valid_content, warning)) => {
+                if let Some(msg) = warning {
+                    println!("[WARN] {}", msg);
+                }
+
+                tasks[task_num - 1].content = valid_content;
+                match save_tasks(username, &tasks) {
+                    Ok(()) => println!("[OK] Task updated."),
+                    Err(e) => eprintln!("[ERR] Could not save task: {}", e),
+                }
+            }
+            Err(err_msg) => println!("[ERR] {}", err_msg),
+        },
+        Err(_) => println!("[ERR] Task editing cancelled."),
+    }
+}
+
 pub fn view_task(username: &str) {
     println!("\n--- Your Tasks ---");
     let tasks = get_all_tasks(username);
@@ -221,7 +281,6 @@ fn mark_task_status(username: &str, completed: bool, status_name: &str) {
     let mut input = String::new();
     try_read_line(&mut input);
 
-
     match input.trim().parse::<usize>() {
         Ok(choice) if choice > 0 && choice <= relevant_tasks.len() => {
             let (original_index, _) = relevant_tasks[choice - 1];
@@ -293,5 +352,3 @@ fn try_read_line(buf: &mut String) {
         eprintln!("Error: failed to read line: {}", e);
     }
 }
-
-
