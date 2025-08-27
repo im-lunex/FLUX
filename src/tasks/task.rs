@@ -11,7 +11,7 @@ pub struct Task {
 impl Task {
     pub fn new(content: String) -> Self {
         Self {
-            id: chrono::Utc::now().timestamp().to_string(),
+            id: (chrono::Utc::now().timestamp() % 100).to_string(),
             content,
             completed: false,
             created_at: chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string(),

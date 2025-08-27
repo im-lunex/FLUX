@@ -159,27 +159,24 @@ pub fn edit_task(username: &str) {
 }
 
 pub fn view_task(username: &str) {
-    println!("\n--- Your Tasks ---");
     let tasks = get_all_tasks(username);
+
+    println!("\nID      Description                Status    Created");
+    println!("------------------------------------------------------");
 
     if tasks.is_empty() {
         println!("(no tasks found)");
         return;
     }
 
-    for (index, task) in tasks.iter().enumerate() {
-        let status_icon = if task.completed { "[✔]" } else { "[ ]" };
+    for task in &tasks {
         let status_text = if task.completed { "DONE" } else { "PENDING" };
         println!(
-            "{}. {} {} - {} (id: {}, created: {})",
-            index + 1,
-            status_icon,
-            status_text,
-            task.content,
-            task.id,
-            task.created_at
+            "{:<10} {:<23} {:<9} {}",
+            task.id, task.content, status_text, task.created_at
         );
     }
+    println!("------------------------------------------------------");
     println!("Total tasks: {}", tasks.len());
 }
 
