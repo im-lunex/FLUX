@@ -9,6 +9,12 @@ use crate::tasks::storage::{get_all_tasks, save_tasks};
 use crate::tasks::task::Task;
 use crate::utils::validation::validate_task_content;
 
+const RESET: &str = "\x1b[0m";
+const GREEN: &str = "\x1b[32m";
+const YELLOW: &str = "\x1b[33m";
+const BOLD: &str = "\x1b[1m";
+const DIM: &str = "\x1b[2m";
+
 // === User Management UI ===
 pub fn handle_user_creation() {
     println!("\n--- Create New User ---");
@@ -161,23 +167,63 @@ pub fn edit_task(username: &str) {
 pub fn view_task(username: &str) {
     let tasks = get_all_tasks(username);
 
-    println!("\nID      Description                Status    Created");
+    println!(
+        "\n{}ID      Description                Status    Created{}",
+        BOLD, RESET
+    );
     println!("------------------------------------------------------");
 
     if tasks.is_empty() {
-        println!("(no tasks found)");
+        println!("{}(no tasks found){}", DIM, RESET);
         return;
     }
 
     for task in &tasks {
-        let status_text = if task.completed { "DONE" } else { "PENDING" };
+        let (status_text, status_color) = if task.completed {
+            ("DONE", GREEN)
+        } else {
+            ("PENDING", YELLOW)
+        };
+
+        let truncated_desc = if task.content.len() > 23 {
+            format!("{}...", &task.content[..20])
+        } else {
+            task.content.clone()
+        };
+
+        let row_color = if task.completed { DIM } else { "" };
+
         println!(
-            "{:<10} {:<23} {:<9} {}",
-            task.id, task.content, status_text, task.created_at
+            "{}{:<8} {:<25} {}{:<9}{} {}{}",
+            row_color,
+            task.id,
+            truncated_desc,
+            status_color,
+            status_text,
+            RESET,
+            task.created_at,
+            if task.completed { RESET } else { "" }
         );
     }
+
     println!("------------------------------------------------------");
-    println!("Total tasks: {}", tasks.len());
+
+    let completed_count = tasks.iter().filter(|task| task.completed).count();
+    let pending_count = tasks.len() - completed_count;
+
+    println!(
+        "{}Total: {} | {}{}Completed: {}{} | {}{}Pending: {}{}",
+        BOLD,
+        tasks.len(),
+        GREEN,
+        BOLD,
+        completed_count,
+        RESET,
+        YELLOW,
+        BOLD,
+        pending_count,
+        RESET
+    );
 }
 
 pub fn add_task(username: &str) {
